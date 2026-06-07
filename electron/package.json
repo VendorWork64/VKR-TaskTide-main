@@ -1,0 +1,80 @@
+{
+  "name": "tasktide-electron",
+  "version": "1.0.0",
+  "description": "Electron frontend for TaskTide backend",
+  "main": "main.js",
+  "author": {
+    "name": "TaskTide",
+    "email": "support@tasktide.dev"
+  },
+  "homepage": "https://github.com/VendorWork64/VKR-TaskTide",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "build:server-bin": "python3 ../scripts/build_standalone_server.py",
+    "dist:standalone:mac": "npm run build:server-bin && electron-builder --mac",
+    "dist:standalone:win": "npm run build:server-bin && electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.tasktide.desktop",
+    "productName": "TaskTide",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "styles.css",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "maintainer": "TaskTide <support@tasktide.dev>"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraResources": [
+      {
+        "from": "server-bin",
+        "to": "server-bin"
+      }
+    ]
+  }
+}

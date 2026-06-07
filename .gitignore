@@ -1,0 +1,53 @@
+# OS / system
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pycache_local/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.venv-build/
+
+# Runtime artifacts
+*.pid
+*.log
+notification_service_window.pid
+
+# Local data / secrets
+archive/
+server/data/*.db
+server/data/*.sqlite*
+server/data/jwt_secret.txt
+data/local/*.db
+data/runtime/*
+
+# Electron dependencies/build artifacts
+electron/node_modules/
+electron/dist/
+electron/server-bin/
+
+# Generic build outputs
+build/
+dist/
+.build/
+
+# Binary installers/artifacts
+*.dmg
+*.exe
+*.AppImage
+*.deb
+*.rpm
+
+# IDE
+.vscode/
+.idea/

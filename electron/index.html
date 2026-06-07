@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskTide Electron</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="stage">
+      <main class="shell">
+        <aside class="sidebar">
+          <div class="brand">⚡ TaskTide</div>
+
+          <div class="profile">
+            <div id="profileAvatar" class="avatar">?</div>
+            <div id="profileName" class="profile-name">Гость</div>
+            <button id="profileAuthBtn" class="tiny-btn">Войти</button>
+          </div>
+
+          <nav class="menu">
+            <button class="menu-item active" data-view-btn="dashboard">Панель</button>
+            <button class="menu-item" data-view-btn="tasks">Задачи</button>
+            <button class="menu-item" data-view-btn="notes">Заметки</button>
+            <button class="menu-item" data-view-btn="focus">Фокус</button>
+            <button class="menu-item" data-view-btn="graphs">Графики</button>
+            <button class="menu-item" data-view-btn="settings">Настройки</button>
+            <button class="menu-item" data-view-btn="guide">Инструкция</button>
+          </nav>
+
+          <div class="theme-switch">
+            <button id="themeLightBtn" class="theme-label">Свет</button>
+            <button id="themeToggleBtn" class="switch-dot" aria-label="Переключить тему"></button>
+            <button id="themeDarkBtn" class="theme-label">Тьма</button>
+          </div>
+        </aside>
+
+        <section class="content">
+          <header class="topbar">
+            <h1 id="viewTitle">Статистика</h1>
+            <div class="topbar-right">
+              <input id="searchInput" class="search-pill" type="text" placeholder="Поиск по задачам..." />
+              <button id="resetFocusSessionsBtn" class="upgrade-btn">Обновить</button>
+            </div>
+          </header>
+
+          <section class="view active" id="view-dashboard">
+            <div class="card-grid">
+              <article id="summaryCard" class="card card-accent clickable-card">
+                <div class="card-head">
+                  <h3>Сводка задач</h3>
+                </div>
+                <div class="kpi-ring">
+                  <div class="ring-center" id="statTotal">0</div>
+                </div>
+                <div class="metric-row"><span>Выполнено</span><strong id="statCompleted">0</strong></div>
+                <div class="metric-row"><span>В процессе</span><strong id="statProgress">0</strong></div>
+                <div class="metric-row"><span>Не начато</span><strong id="statTodo">0</strong></div>
+              </article>
+
+              <article id="reportCard" class="card card-dark report-card clickable-card">
+                <div class="pill-row">
+                  <div class="report-pill-actions">
+                    <span class="tag">Полный отчёт</span>
+                    <button id="reportActionBtn" class="tag report-action-tag">Скачать отчёт</button>
+                  </div>
+                </div>
+                <div id="reportText" class="report-content">Загрузка отчёта...</div>
+              </article>
+
+              <article id="completionCard" class="card card-light clickable-card">
+                <h3>Процент выполнения</h3>
+                <div class="day-pills">
+                  <span id="pillTotal" data-filter="all" class="active-day filter-pill">Всего 0</span>
+                  <span id="pillDone" data-filter="done" class="filter-pill">Выполнено 0</span>
+                  <span id="pillOverdue" data-filter="overdue" class="filter-pill">Просрочено 0</span>
+                </div>
+                <div id="completionRate" class="big-rate">0%</div>
+                <div id="completionSub" class="sub-rate">Нет данных</div>
+              </article>
+
+              <article id="focusCard" class="card card-dark roi-card clickable-card">
+                <h3>Статистика фокуса</h3>
+                <div id="roiValue" class="roi-value">0м</div>
+                <div id="roiSub" class="sub-rate">0 циклов сегодня</div>
+                <div class="sparkline"></div>
+              </article>
+
+              <article id="productivityCard" class="card hero-card clickable-card">
+                <div id="productivityChart" class="productivity-chart">
+                  <div class="chart-empty">Нет данных для графика</div>
+                </div>
+                <div id="productivityBadge" class="hero-badge">Оценка продуктивности: 0/100</div>
+              </article>
+
+              <article id="recentCard" class="card card-dark churn-card">
+                <h3>Последние задачи</h3>
+                <div id="tasksList" class="tasks-list"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" id="view-tasks">
+            <article class="panel">
+              <h2>Управление задачами</h2>
+              <div class="tasks-filter-row">
+                <select id="taskPriorityFilter">
+                  <option value="all">Все приоритеты</option>
+                  <option value="Важно - Срочно">🔥 Важно - Срочно</option>
+                  <option value="Важно - Не срочно">⭐ Важно - Не срочно</option>
+                  <option value="Не важно - Срочно">⚡ Не важно - Срочно</option>
+                  <option value="Не важно - Не срочно">📝 Не важно - Не срочно</option>
+                </select>
+                <select id="taskCategoryFilter">
+                  <option value="all">Все места</option>
+                  <option value="Работа">💼 Работа</option>
+                  <option value="Личное">👤 Личное</option>
+                  <option value="Учёба">📚 Учёба</option>
+                </select>
+                <div class="day-pills tasks-pills">
+                  <span data-filter="all" class="filter-pill active-day">Все</span>
+                  <div class="status-filter-wrap">
+                    <button id="statusFilterBtn" class="status-filter-btn" type="button">Статус</button>
+                    <div id="statusFilterMenu" class="status-filter-menu">
+                      <button type="button" class="status-filter-option" data-status-filter="all">все</button>
+                      <button type="button" class="status-filter-option" data-status-filter="не начата">не начата</button>
+                      <button type="button" class="status-filter-option" data-status-filter="в процессе">в процессе</button>
+                      <button type="button" class="status-filter-option" data-status-filter="выполнена">выполнена</button>
+                    </div>
+                  </div>
+                  <span data-filter="overdue" class="filter-pill">Просроченные</span>
+                </div>
+              </div>
+              <div class="form-grid">
+                <input id="nameInput" type="text" placeholder="Название задачи" />
+                <select id="priorityInput">
+                  <option value="Важно - Срочно">🔥 Важно - Срочно</option>
+                  <option value="Важно - Не срочно">⭐ Важно - Не срочно</option>
+                  <option value="Не важно - Срочно">⚡ Не важно - Срочно</option>
+                  <option value="Не важно - Не срочно">📝 Не важно - Не срочно</option>
+                </select>
+                <select id="categoryInput">
+                  <option value="Работа">💼 Работа</option>
+                  <option value="Учёба">📚 Учёба</option>
+                  <option value="Личное">👤 Личное</option>
+                </select>
+                <select id="deadlineModeInput">
+                  <option value="duration">⏱ По длительности</option>
+                  <option value="absolute">📅 По дате</option>
+                </select>
+                <input id="minutesInput" type="text" placeholder="дни:часы:минуты" />
+                <div class="deadline-picker-wrap">
+                  <button id="deadlineAtBtn" type="button" class="deadline-picker-btn">📅 Выбрать дату</button>
+                  <input id="deadlineAtInput" type="datetime-local" class="deadline-picker-native" />
+                </div>
+                <input id="descriptionInput" type="text" placeholder="Описание" />
+                <button id="createBtn" class="primary-btn">Добавить</button>
+              </div>
+              <div id="tasksListFull" class="tasks-list"></div>
+            </article>
+          </section>
+
+          <section class="view" id="view-notes">
+            <article class="panel">
+              <h2>Подзадачи и заметки</h2>
+              <div class="notes-tools">
+                <div class="notes-task-picker">
+                  <button id="notesTaskPickerBtn" class="notes-task-btn" type="button">Все задачи</button>
+                  <div id="notesTaskPickerMenu" class="notes-task-menu"></div>
+                  <select id="notesTaskFilter" class="notes-task-select-hidden"></select>
+                </div>
+                <input id="noteTitleInput" type="text" placeholder="Заголовок заметки" />
+                <input id="noteContentInput" type="text" placeholder="Содержание" />
+                <button id="createNoteBtn" class="primary-btn">Добавить заметку</button>
+              </div>
+              <div class="notes-search-row">
+                <input id="notesSearchInput" type="text" placeholder="Поиск по заметкам..." />
+                <input id="notesTaskQuickSearchInput" type="text" placeholder="Поиск задачи для привязки..." />
+              </div>
+              <div id="noteReplyInfo" class="note-reply-info hidden">
+                <span id="noteReplyText">Добавляется подзаметка</span>
+                <button id="noteReplyCancelBtn" class="mini-btn">Отменить</button>
+              </div>
+              <div id="notesList" class="notes-list"></div>
+            </article>
+          </section>
+
+          <section class="view" id="view-focus">
+            <article class="panel">
+              <div class="focus-top">
+                <h2>Pomodoro Фокус</h2>
+                <div id="focusStatsText" class="focus-stats-text">Сегодня: 0 мин, 0 циклов</div>
+              </div>
+              <div class="focus-task-row">
+                <select id="focusTaskSelect">
+                  <option value="">Без привязки к задаче</option>
+                </select>
+                <div id="focusTaskInfo" class="focus-task-info">Задача не выбрана</div>
+              </div>
+              <div class="focus-body">
+                <div class="timer-block">
+                  <div id="timerLabel" class="timer-label">25:00</div>
+                  <div id="timerState" class="timer-state">Работа</div>
+                </div>
+                <div class="focus-actions">
+                  <button id="timerStartBtn" class="primary-btn">Старт</button>
+                  <button id="timerPauseBtn" class="primary-btn">Пауза</button>
+                  <button id="timerResetBtn" class="primary-btn">Сброс</button>
+                  <button id="timerFinishBtn" class="primary-btn">Завершить сессию</button>
+                </div>
+              </div>
+              <h3>Последние сессии</h3>
+              <div id="focusSessionsList" class="notes-list"></div>
+            </article>
+          </section>
+
+          <section class="view" id="view-graphs">
+            <article class="panel">
+              <h2>Графики</h2>
+              <div class="graphs-meta" id="graphsUpdatedAt">Обновление: --</div>
+              <div class="graphs-grid">
+                <section class="graphs-card">
+                  <h3>Статусы задач</h3>
+                  <div class="graphs-status-layout">
+                    <div id="graphStatusDonut" class="graphs-donut">
+                      <div class="graphs-donut-center" id="graphStatusTotal">0</div>
+                    </div>
+                    <div class="graphs-legend">
+                      <div class="graphs-legend-row"><span class="dot done"></span><span>Выполнено</span><strong id="graphDoneCount">0</strong></div>
+                      <div class="graphs-legend-row"><span class="dot progress"></span><span>В процессе</span><strong id="graphProgressCount">0</strong></div>
+                      <div class="graphs-legend-row"><span class="dot todo"></span><span>Не начато</span><strong id="graphTodoCount">0</strong></div>
+                      <div class="graphs-legend-row"><span class="dot overdue"></span><span>Просрочено</span><strong id="graphOverdueCount">0</strong></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="graphs-card">
+                  <h3>По приоритетам</h3>
+                  <div id="graphPriorityBars" class="graphs-bars"></div>
+                </section>
+
+                <section class="graphs-card">
+                  <h3>По местам</h3>
+                  <div id="graphCategoryBars" class="graphs-bars"></div>
+                </section>
+
+                <section class="graphs-card">
+                  <h3>Динамика за 7 дней</h3>
+                  <div id="graphWeeklyBars" class="graphs-weekly"></div>
+                </section>
+
+                <section class="graphs-card graphs-carousel-card">
+                  <h3>Дополнительные графики</h3>
+                  <div id="graphsExtraList" class="graphs-extra-list"></div>
+                </section>
+              </div>
+            </article>
+          </section>
+
+          <section class="view" id="view-settings">
+            <article class="panel">
+              <h2>Настройки</h2>
+              <div class="settings-stack">
+                <section class="settings-card">
+                  <div class="settings-head">
+                    <h3>Уведомления по дедлайнам</h3>
+                    <label class="settings-toggle">
+                      <input id="notifyEnabledInput" type="checkbox" />
+                      <span>Включить уведомления</span>
+                    </label>
+                  </div>
+                  <p class="settings-sub">
+                    Проверка дедлайнов выполняется автоматически каждую минуту.
+                  </p>
+                  <label class="settings-toggle settings-toggle-inline">
+                    <input id="notifySoundInput" type="checkbox" />
+                    <span>Включить звук в уведомлениях</span>
+                  </label>
+                </section>
+
+                <section class="settings-card">
+                  <h3>Когда показывать уведомление</h3>
+                  <div class="settings-check-grid">
+                    <label class="settings-check">
+                      <input id="notifyMonthInput" type="checkbox" />
+                      <span>За месяц</span>
+                    </label>
+                    <label class="settings-check">
+                      <input id="notifyWeekInput" type="checkbox" />
+                      <span>За неделю</span>
+                    </label>
+                    <label class="settings-check">
+                      <input id="notifyDayInput" type="checkbox" />
+                      <span>За день</span>
+                    </label>
+                    <label class="settings-check">
+                      <input id="notify6hInput" type="checkbox" />
+                      <span>За 6 часов</span>
+                    </label>
+                    <label class="settings-check">
+                      <input id="notify1hInput" type="checkbox" />
+                      <span>За 1 час</span>
+                    </label>
+                    <label class="settings-check">
+                      <input id="notify30mInput" type="checkbox" />
+                      <span>За 30 минут</span>
+                    </label>
+                    <label class="settings-check">
+                      <input id="notify5mInput" type="checkbox" />
+                      <span>За 5 минут</span>
+                    </label>
+                  </div>
+                </section>
+
+                <div id="notifySettingsStatus" class="settings-status">
+                  Уведомления выключены.
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="view" id="view-guide">
+            <article class="panel">
+              <h2>Инструкция</h2>
+              <div class="guide-accordion">
+                <details class="guide-item" open>
+                  <summary>Задачи</summary>
+                  <div class="guide-body">
+                    <p><strong>Что делает раздел:</strong> здесь вы создаёте задачи, задаёте срок и контролируете, на каком этапе находится каждая задача.</p>
+                    <ol>
+                      <li>Откройте вкладку <strong>Задачи</strong> в левом меню.</li>
+                      <li>В поле <strong>Название задачи</strong> введите короткое и понятное имя, например: "Сдать отчёт".</li>
+                      <li>В выпадающем списке приоритета выберите важность: <strong>Важно - Срочно</strong>, <strong>Важно - Не срочно</strong> и т.д.</li>
+                      <li>В поле места (категории) выберите, где относится задача: <strong>Работа</strong>, <strong>Учёба</strong>, <strong>Личное</strong>.</li>
+                      <li>В поле срока введите время в формате <strong>дни:часы:минуты</strong>. Пример: <strong>003:04:30</strong> = 3 дня, 4 часа, 30 минут.</li>
+                      <li>При необходимости заполните поле <strong>Описание</strong> простым текстом (что именно нужно сделать).</li>
+                      <li>Нажмите кнопку <strong>Добавить</strong>. Новая задача появится в списке ниже.</li>
+                      <li>Чтобы изменить этап задачи, справа от задачи откройте список статуса и выберите: <strong>не начата</strong>, <strong>в процессе</strong>, <strong>выполнена</strong>.</li>
+                      <li>Если задача больше не нужна, нажмите кнопку <strong>Удалить</strong> рядом с ней.</li>
+                    </ol>
+                    <p><strong>Если не получается добавить задачу:</strong> проверьте, что поле названия не пустое и срок введён строго в формате <strong>000:00:00</strong>.</p>
+                  </div>
+                </details>
+
+                <details class="guide-item">
+                  <summary>Заметки</summary>
+                  <div class="guide-body">
+                    <p><strong>Что делает раздел:</strong> помогает хранить подробности по задачам: идеи, шаги, материалы, ссылки и напоминания.</p>
+                    <ol>
+                      <li>Перейдите во вкладку <strong>Заметки</strong>.</li>
+                      <li>Слева выберите задачу в поле <strong>Все задачи</strong>, если хотите привязать заметку к конкретной задаче.</li>
+                      <li>В поле <strong>Заголовок заметки</strong> введите короткий заголовок.</li>
+                      <li>В поле <strong>Содержание</strong> опишите детали: что сделать, в каком порядке, на что обратить внимание.</li>
+                      <li>Нажмите <strong>Добавить заметку</strong>. Новая запись появится в списке.</li>
+                      <li>Для добавления подзаметки нажмите кнопку <strong>Подзаметка</strong> у нужной записи и создайте дочернюю заметку.</li>
+                      <li>Чтобы закрепить важную заметку наверху, нажмите <strong>Закрепить</strong>.</li>
+                      <li>Для быстрого поиска используйте строку <strong>Поиск по заметкам...</strong>.</li>
+                      <li>Для удаления ненужной записи нажмите <strong>Удалить</strong>.</li>
+                    </ol>
+                    <p><strong>Совет:</strong> в заголовок пишите тему, а в содержание пошаговый план. Так заметки легче читать позже.</p>
+                  </div>
+                </details>
+
+                <details class="guide-item">
+                  <summary>Фокус</summary>
+                  <div class="guide-body">
+                    <p><strong>Что делает раздел:</strong> это Pomodoro-таймер для работы отрезками времени. Он помогает не отвлекаться.</p>
+                    <ol>
+                      <li>Откройте вкладку <strong>Фокус</strong>.</li>
+                      <li>При желании выберите задачу из списка. Если задача не выбрана, сессия всё равно запишется как "Без задачи".</li>
+                      <li>Нажмите <strong>Старт</strong>, чтобы начать рабочий интервал.</li>
+                      <li>Если нужно временно остановиться, нажмите <strong>Пауза</strong>.</li>
+                      <li>Кнопка <strong>Сброс</strong> возвращает таймер к началу текущего интервала.</li>
+                      <li>После окончания рабочего отрезка нажмите <strong>Завершить сессию</strong>, чтобы сохранить результат.</li>
+                      <li>Ниже в блоке <strong>Последние сессии</strong> вы увидите историю: тип сессии, длительность и время.</li>
+                    </ol>
+                    <p><strong>Как работать новичку:</strong> начните с одного цикла, затем сделайте короткий перерыв. Повторяйте, пока не завершите задачу.</p>
+                  </div>
+                </details>
+
+                <details class="guide-item">
+                  <summary>Графики</summary>
+                  <div class="guide-body">
+                    <p><strong>Что делает раздел:</strong> показывает визуальную картину вашей продуктивности, чтобы быстро понимать прогресс.</p>
+                    <ol>
+                      <li>Откройте вкладку <strong>Графики</strong>.</li>
+                      <li>Смотрите основные показатели: сколько задач выполнено, сколько просрочено и сколько ещё не начато.</li>
+                      <li>Сравнивайте данные между периодами (день, месяц, год), если такие блоки доступны в текущем экране.</li>
+                      <li>Используйте кнопку <strong>Обновить</strong> сверху, чтобы подтянуть актуальные данные.</li>
+                      <li>Если график кажется "пустым", проверьте, есть ли задачи и менялись ли у них статусы.</li>
+                    </ol>
+                    <p><strong>Как читать графики:</strong> рост выполненных задач и снижение просроченных означает, что режим работы выбран правильно.</p>
+                  </div>
+                </details>
+              </div>
+            </article>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="authModal" class="auth-modal hidden">
+      <div class="auth-modal-backdrop"></div>
+      <div class="auth-modal-card">
+        <h3 id="authModalTitle">Вход в аккаунт</h3>
+        <div class="auth-tabs">
+          <button id="authTabLoginBtn" class="auth-tab active" type="button">Вход</button>
+          <button id="authTabRegisterBtn" class="auth-tab" type="button">Регистрация</button>
+        </div>
+        <div id="authNameRow" class="auth-row hidden">
+          <label for="authNameInput">Имя</label>
+          <input id="authNameInput" type="text" placeholder="Ваше имя" />
+        </div>
+        <div class="auth-row">
+          <label for="authEmailInput">Login</label>
+          <input id="authEmailInput" type="text" placeholder="login" />
+        </div>
+        <div class="auth-row">
+          <label for="authPasswordInput">Пароль</label>
+          <input id="authPasswordInput" type="password" placeholder="Минимум 6 символов" />
+        </div>
+        <div id="authErrorText" class="auth-error hidden"></div>
+        <div class="auth-actions">
+          <button id="authSubmitBtn" class="primary-btn" type="button">Войти</button>
+          <button id="authLogoutBtn" class="mini-btn hidden" type="button">Выйти</button>
+          <button id="authCancelBtn" class="mini-btn" type="button">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="deadlineModal" class="deadline-modal hidden">
+      <div id="deadlineModalBackdrop" class="deadline-modal-backdrop"></div>
+      <div class="deadline-modal-card" role="dialog" aria-modal="true" aria-label="Выбор дедлайна">
+        <div class="deadline-modal-head">
+          <button id="deadlinePrevMonthBtn" class="mini-btn deadline-nav-btn" type="button">◀</button>
+          <div id="deadlineMonthLabel" class="deadline-month-label">апрель 2026</div>
+          <button id="deadlineNextMonthBtn" class="mini-btn deadline-nav-btn" type="button">▶</button>
+        </div>
+        <div class="deadline-week-row">
+          <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+        </div>
+        <div id="deadlineCalendarGrid" class="deadline-calendar-grid"></div>
+        <div class="deadline-time-row">
+          <label class="deadline-time-field">
+            <span>Часы</span>
+            <select id="deadlineHourSelect"></select>
+          </label>
+          <label class="deadline-time-field">
+            <span>Минуты</span>
+            <select id="deadlineMinuteSelect"></select>
+          </label>
+        </div>
+        <div class="deadline-modal-actions">
+          <button id="deadlineTodayBtn" class="mini-btn" type="button">Сейчас</button>
+          <div class="deadline-modal-actions-right">
+            <button id="deadlineCancelBtn" class="mini-btn" type="button">Отмена</button>
+            <button id="deadlineApplyBtn" class="primary-btn" type="button">Применить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
