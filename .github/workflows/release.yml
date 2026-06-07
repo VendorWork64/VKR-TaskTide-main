@@ -1,5 +1,8 @@
 name: Create Release
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -94,8 +97,9 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           files: release-files/*
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
